@@ -5,7 +5,7 @@
     "keywords": ["static", "analysis", "indexing", "indexer", "integrator", "autocompletion", "refactoring"],
     "homepage": "https://php-integrator.github.io/",
     "license": "GPL-3.0",
-    
+
     "autoload": {
         "classmap": ["src/", "tests/"],
         "psr-4": {
@@ -27,6 +27,6 @@
     },
 
     "scripts": {
-        "test" : "vendor/bin/phpunit tests"
+        "test" : "vendor/bin/phpunit"
     }
 }

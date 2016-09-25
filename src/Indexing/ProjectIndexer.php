@@ -2,7 +2,9 @@
 
 namespace PhpIntegrator\Indexing;
 
-use PhpIntegrator\SourceCodeHelper;
+use UnexpectedValueException;
+
+use PhpIntegrator\Utility\SourceCodeStreamReader;
 
 /**
  * Handles project and folder indexing.
@@ -25,14 +27,14 @@ class ProjectIndexer
     protected $fileIndexer;
 
     /**
-     * @var Scanner
+     * @var SourceCodeStreamReader
      */
-    protected $scanner;
+    protected $sourceCodeStreamReader;
 
     /**
-     * @var SourceCodeHelper
+     * @var array
      */
-    protected $sourceCodeHelper;
+    protected $fileModifiedMap;
 
     /**
      * @var resource|null
@@ -45,24 +47,24 @@ class ProjectIndexer
     protected $progressStream;
 
     /**
-     * @param StorageInterface $storage
-     * @param BuiltinIndexer   $builtinIndexer
-     * @param FileIndexer      $fileIndexer
-     * @param Scanner          $scanner
-     * @param SourceCodeHelper $sourceCodeHelper
+     * @param StorageInterface       $storage
+     * @param BuiltinIndexer         $builtinIndexer
+     * @param FileIndexer            $fileIndexer
+     * @param SourceCodeStreamReader $sourceCodeStreamReader
+     * @param array                  $fileModifiedMap
      */
     public function __construct(
         StorageInterface $storage,
         BuiltinIndexer $builtinIndexer,
         FileIndexer $fileIndexer,
-        Scanner $scanner,
-        SourceCodeHelper $sourceCodeHelper
+        SourceCodeStreamReader $sourceCodeStreamReader,
+        array $fileModifiedMap
     ) {
         $this->storage = $storage;
         $this->builtinIndexer = $builtinIndexer;
         $this->fileIndexer = $fileIndexer;
-        $this->scanner = $scanner;
-        $this->sourceCodeHelper = $sourceCodeHelper;
+        $this->sourceCodeStreamReader = $sourceCodeStreamReader;
+        $this->fileModifiedMap = $fileModifiedMap;
     }
 
     /**
@@ -150,99 +152,65 @@ class ProjectIndexer
      */
     public function index(array $items, array $extensionsToIndex, array $excludedPaths = [], $sourceOverrideMap = [])
     {
-        $this->indexBuiltinItemsIfNecessary();
+        $fileModifiedMap = $this->fileModifiedMap;
 
-        $this->logMessage('Pruning removed files...');
-        $this->pruneRemovedFiles();
+        // The modification time doesn't matter for files we have direct source code for, as this source code always
+        // needs to be indexed (e.g it may simply not have been saved to disk yet).
+        foreach ($sourceOverrideMap as $filePath => $source) {
+            unset($fileModifiedMap[$filePath]);
+        }
 
-        $this->logMessage('Scanning for files that need (re)indexing...');
-        $files = $this->scanForFilesToIndex($items, $extensionsToIndex);
-        $files = $this->getFilteredFilesToIndex($files, $excludedPaths);
-
-        $this->logMessage('Indexing outline...');
-
-        $totalItems = count($files);
-
-        $this->sendProgress(0, $totalItems);
+        $iterator = new Iterating\MultiRecursivePathIterator($items);
+        $iterator = new Iterating\ExtensionFilterIterator($iterator, $extensionsToIndex);
+        $iterator = new Iterating\ExclusionFilterIterator($iterator, $excludedPaths);
+        $iterator = new Iterating\ModificationTimeFilterIterator($iterator, $fileModifiedMap);
 
         $this->storage->beginTransaction();
 
-        foreach ($files as $i => $filePath) {
-            echo $this->logMessage('  - Indexing ' . $filePath);
+        $this->logMessage('Scanning and indexing files that need (re)indexing...');
 
-            $code = isset($sourceOverrideMap[$filePath]) ?
-                $sourceOverrideMap[$filePath] :
-                $this->sourceCodeHelper->getSourceCode($filePath, false);
+        $totalItems = iterator_count($iterator);
 
-            try {
-                $this->fileIndexer->index($filePath, $code);
-            } catch (IndexingFailedException $e) {
-                $this->logMessage('    - ERROR: Indexing failed due to parsing errors!');
+        $this->sendProgress(0, $totalItems);
+
+        $i = 0;
+
+        /** @var \SplFileInfo $fileInfo */
+        foreach ($iterator as $fileInfo) {
+            $filePath = $fileInfo->getPathname();
+
+            $this->logMessage('  - Indexing ' . $filePath);
+
+            $code = null;
+
+            if (isset($sourceOverrideMap[$filePath])) {
+                $code = $sourceOverrideMap[$filePath];
+            } else {
+                try {
+                    $code = $this->sourceCodeStreamReader->getSourceCodeFromFile($filePath);
+                } catch (UnexpectedValueException $e) {
+                    $code = null; // Skip files that we can't read.
+                }
             }
 
-            $this->sendProgress($i+1, $totalItems);
+            if ($code !== null) {
+                try {
+                    $this->fileIndexer->index($filePath, $code);
+                } catch (IndexingFailedException $e) {
+                    $this->logMessage('    - ERROR: Indexing failed due to parsing errors!');
+                }
+            }
+
+            $this->sendProgress(++$i, $totalItems);
         }
 
         $this->storage->commitTransaction();
     }
 
     /**
-     * @param string[] $paths
-     * @param string[] $extensionsToIndex
-     *
-     * @return string[]
-     */
-    protected function scanForFilesToIndex(array $paths, array $extensionsToIndex)
-    {
-        $files = [];
-
-        foreach ($paths as $path) {
-            if (is_dir($path)) {
-                $filesInDirectory = $this->scanner->scan($path, $extensionsToIndex);
-
-                $files = array_merge($files, $filesInDirectory);
-            } elseif (is_file($path)) {
-                $files[] = $path;
-            } else {
-                throw new IndexingFailedException('The specified file or directory "' . $path . '" does not exist!');
-            }
-        }
-
-        return $files;
-    }
-
-    /**
-     * @param string[] $files
-     * @param string[] $excludedDirectories
-     *
-     * @return string[]
-     */
-    protected function getFilteredFilesToIndex(array $files, array $excludedDirectories)
-    {
-        $filteredItems = [];
-
-        foreach ($files as $file) {
-            $skipFile = false;
-
-            foreach ($excludedDirectories as $excludedDirectory) {
-                if (mb_strpos($file, $excludedDirectory) === 0) {
-                    $skipFile = true;
-                    break;
-                }
-            }
-
-            if (!$skipFile) {
-                $filteredItems[] = $file;
-            }
-        }
-
-        return $filteredItems;
-    }
-
-    /**
      * Indexes builtin PHP structural elemens when necessary.
      */
-    protected function indexBuiltinItemsIfNecessary()
+    public function indexBuiltinItemsIfNecessary()
     {
         $hasIndexedBuiltin = $this->storage->getSetting('has_indexed_builtin');
 
@@ -265,11 +233,9 @@ class ProjectIndexer
     /**
      * Prunes removed files from the index.
      */
-    protected function pruneRemovedFiles()
+    public function pruneRemovedFiles()
     {
-        $fileModifiedMap = $this->storage->getFileModifiedMap();
-
-        foreach ($fileModifiedMap as $fileName => $indexedTime) {
+        foreach ($this->fileModifiedMap as $fileName => $indexedTime) {
             if (!file_exists($fileName)) {
                 $this->logMessage('  - ' . $fileName);
 

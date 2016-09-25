@@ -5,12 +5,12 @@ namespace PhpIntegrator\Indexing;
 use Exception;
 use ReflectionClass;
 use ReflectionMethod;
-use ReflectionProperty;
 use ReflectionFunction;
+use ReflectionProperty;
 use ReflectionParameter;
 use ReflectionFunctionAbstract;
 
-use PhpIntegrator\TypeAnalyzer;
+use PhpIntegrator\Analysis\Typing\TypeAnalyzer;
 
 /**
  * Handles indexation of built-in classes, global constants and global functions.
@@ -51,6 +51,7 @@ class BuiltinIndexer
 
     /**
      * @param StorageInterface $storage
+     * @param TypeAnalyzer     $typeAnalyzer
      */
     public function __construct(StorageInterface $storage, TypeAnalyzer $typeAnalyzer)
     {
@@ -151,7 +152,7 @@ class BuiltinIndexer
 
         return $this->storage->insert(IndexStorageItemEnum::CONSTANTS, [
             'name'               => $name,
-            'fqcn'               => $name,
+            'fqcn'               => $this->typeAnalyzer->getNormalizedFqcn($name),
             'file_id'            => null,
             'start_line'         => null,
             'end_line'           => null,
@@ -206,7 +207,7 @@ class BuiltinIndexer
             if ($returnType) {
                 $returnTypes[] = [
                     'type' => (string) $returnType,
-                    'fqcn' => (string) $returnType
+                    'fqcn' => $this->typeAnalyzer->getNormalizedFqcn((string) $returnType)
                 ];
             }
         }
@@ -260,8 +261,8 @@ class BuiltinIndexer
                 $isVariadic = $parameter->isVariadic();
             }
 
-            $type = null;
             $types = [];
+            $isNullable = false;
 
             // Requires PHP >= 7, good thing this only affects built-in functions, which don't have any type
             // hinting yet anyways (at least in PHP < 7).
@@ -269,9 +270,11 @@ class BuiltinIndexer
                 $type = $parameter->getType();
 
                 if ($type) {
+                    $isNullable = $type->allowsNull();
+
                     $types[] = [
                         'type' => (string) $type,
-                        'fqcn' => (string) $type
+                        'fqcn' => $this->typeAnalyzer->getNormalizedFqcn((string) $type)
                     ];
                 }
             }
@@ -283,7 +286,7 @@ class BuiltinIndexer
                 'types_serialized' => serialize($types),
                 'description'      => null,
                 'default_value'    => null, // Fetching this is not possible due to "implementation details" (PHP docs).
-                'is_nullable'      => $type && $type->allowsNull() ? 1 : 0,
+                'is_nullable'      => $isNullable ? 1 : 0,
                 'is_reference'     => $parameter->isPassedByReference() ? 1 : 0,
                 'is_optional'      => $parameter->isOptional() ? 1 : 0,
                 'is_variadic'      => $isVariadic ? 1 : 0
@@ -350,13 +353,13 @@ class BuiltinIndexer
                 $fqcn = $extendedInfo['ret_type'];
 
                 if (!$this->typeAnalyzer->isSpecialType($fqcn)) {
-                    $fqcn = $this->typeAnalyzer->getNormalizedFqcn($fqcn, true);
+                    $fqcn = $this->typeAnalyzer->getNormalizedFqcn($fqcn);
                 }
 
                 $returnTypes = [
                     [
                         'type' => $extendedInfo['ret_type'],
-                        'fqcn' => $fqcn
+                        'fqcn' => $this->typeAnalyzer->getNormalizedFqcn($fqcn)
                     ]
                 ];
 
@@ -402,13 +405,13 @@ class BuiltinIndexer
                 $fqcn = $parameterInfo['type'];
 
                 if (!$this->typeAnalyzer->isSpecialType($fqcn)) {
-                    $fqcn = $this->typeAnalyzer->getNormalizedFqcn($fqcn, true);
+                    $fqcn = $this->typeAnalyzer->getNormalizedFqcn($fqcn);
                 }
 
                 $types = [
                     [
                         'type' => $parameterInfo['type'],
-                        'fqcn' => $fqcn
+                        'fqcn' => $this->typeAnalyzer->getNormalizedFqcn($fqcn)
                     ]
                 ];
 
@@ -431,7 +434,10 @@ class BuiltinIndexer
      */
     protected function getNormalizedDocumentation($documentation)
     {
-        return str_replace('\\n', "\n", $documentation);
+        $documentation = str_replace('\\n', "\n", $documentation);
+        $documentation = str_replace('\_', "_", $documentation);
+
+        return $documentation;
     }
 
     /**
@@ -545,7 +551,7 @@ class BuiltinIndexer
             'long_description'  => null,
             'is_builtin'        => 1,
             'is_final'          => $element->isFinal() ? 1 : 0,
-            'is_abstract'       => $element->isAbstract() ? 1 : 0,
+            'is_abstract'       => $element->isAbstract() && !$element->isInterface() ? 1 : 0,
             'is_annotation'     => 0,
             'is_deprecated'     => 0,
             'has_docblock'      => 0
@@ -553,22 +559,22 @@ class BuiltinIndexer
 
         foreach ($parents as $parent) {
             $this->storage->insert(IndexStorageItemEnum::STRUCTURES_PARENTS_LINKED, [
-                'structure_id'           => $structureId,
-                'linked_structure_fqcn' => $parent
+                'structure_id'          => $structureId,
+                'linked_structure_fqcn' => $this->typeAnalyzer->getNormalizedFqcn($parent)
             ]);
         }
 
         foreach ($interfaces as $interface) {
             $this->storage->insert(IndexStorageItemEnum::STRUCTURES_INTERFACES_LINKED, [
-                'structure_id'           => $structureId,
-                'linked_structure_fqcn' => $interface
+                'structure_id'          => $structureId,
+                'linked_structure_fqcn' => $this->typeAnalyzer->getNormalizedFqcn($interface)
             ]);
         }
 
         foreach ($traits as $trait) {
             $this->storage->insert(IndexStorageItemEnum::STRUCTURES_TRAITS_LINKED, [
-                'structure_id'           => $structureId,
-                'linked_structure_fqcn' => $trait
+                'structure_id'          => $structureId,
+                'linked_structure_fqcn' => $this->typeAnalyzer->getNormalizedFqcn($trait)
             ]);
         }
 
@@ -593,7 +599,7 @@ class BuiltinIndexer
         $functionId = $this->indexFunctionLike($function);
 
         $this->storage->update(IndexStorageItemEnum::FUNCTIONS, $functionId, [
-            'fqcn' => $function->getName()
+            'fqcn' => $this->typeAnalyzer->getNormalizedFqcn($function->getName())
         ]);
     }
 
@@ -732,7 +738,9 @@ class BuiltinIndexer
 
         $shortName = $element->getShortName();
 
-        return isset($correctionMap[$shortName]) ? $correctionMap[$shortName] : $element->getName();
+        $correctedName = isset($correctionMap[$shortName]) ? $correctionMap[$shortName] : $element->getName();
+
+        return $this->typeAnalyzer->getNormalizedFqcn($correctedName);
     }
 
     /**
