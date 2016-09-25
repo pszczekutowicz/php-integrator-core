@@ -7,7 +7,7 @@
     "license": "GPL-3.0",
 
     "autoload": {
-        "classmap": ["src/", "tests/"],
+        "classmap": ["src/"],
         "psr-4": {
             "PhpIntegrator\\": "src/"
         }
