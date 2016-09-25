@@ -28,5 +28,12 @@
 
     "scripts": {
         "test" : "vendor/bin/phpunit"
+    },
+
+    "config" : {
+        "vendor-dir" : "vendor",
+        "platform": {
+            "php": "5.5"
+        }
     }
 }
