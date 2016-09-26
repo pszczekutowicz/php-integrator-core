@@ -114,8 +114,8 @@ class InheritanceResolver extends AbstractResolver
                 'startLine'       => $class['startLine'],
                 'endLine'         => $class['endLine'],
                 'type'            => $class['type'],
-                'startLineMember' => $parentPropertyData['startLine'],
-                'endLineMember'   => $parentPropertyData['endLine']
+                'startLineMember' => $childProperty['startLine'],
+                'endLineMember'   => $childProperty['endLine']
             ];
         } else {
             $childProperty = [];

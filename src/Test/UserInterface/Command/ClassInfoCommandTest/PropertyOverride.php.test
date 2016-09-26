@@ -2,16 +2,24 @@
 
 namespace A;
 
+class AncestorClass
+{
+    use ParentTrait;
+
+    protected $ancestorProperty;
+}
+
 trait ParentTrait
 {
     protected $parentTraitProperty;
 }
 
-class ParentClass
+class ParentClass extends AncestorClass
 {
     use ParentTrait;
 
     protected $parentProperty;
+    protected $ancestorProperty;
 }
 
 class ChildClass extends ParentClass
@@ -20,4 +28,5 @@ class ChildClass extends ParentClass
 
     protected $parentTraitProperty;
     protected $parentProperty;
+    protected $ancestorProperty;
 }
