@@ -180,8 +180,8 @@ class InheritanceResolver extends AbstractResolver
                 'startLine'       => $class['startLine'],
                 'endLine'         => $class['endLine'],
                 'type'            => $class['type'],
-                'startLineMember' => $parentMethodData['startLine'],
-                'endLineMember'   => $parentMethodData['endLine']
+                'startLineMember' => $childMethod['startLine'],
+                'endLineMember'   => $childMethod['endLine']
             ];
         } else {
             $childMethod = [];

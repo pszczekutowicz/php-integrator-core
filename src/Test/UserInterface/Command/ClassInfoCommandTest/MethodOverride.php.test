@@ -2,6 +2,14 @@
 
 namespace A;
 
+class AncestorClass
+{
+    protected function ancestorMethod()
+    {
+
+    }
+}
+
 trait ParentTrait
 {
     protected function parentTraitMethod()
@@ -10,7 +18,7 @@ trait ParentTrait
     }
 }
 
-class ParentClass
+class ParentClass extends AncestorClass
 {
     use ParentTrait;
 
@@ -20,6 +28,11 @@ class ParentClass
     }
 
     protected function parentMethod()
+    {
+
+    }
+
+    protected function ancestorMethod()
     {
 
     }
@@ -40,6 +53,11 @@ class ChildClass extends ParentClass
     use TestTrait;
 
     public function __construct(Foo $foo)
+    {
+
+    }
+
+    protected function ancestorMethod()
     {
 
     }

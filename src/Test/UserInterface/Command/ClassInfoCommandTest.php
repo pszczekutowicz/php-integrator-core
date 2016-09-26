@@ -589,31 +589,31 @@ class ClassInfoCommandTest extends IndexedTest
         ], $output['methods']['__construct']['parameters']);
 
         $this->assertEquals([
-            'startLine'   => 17,
-            'endLine'     => 20,
+            'startLine'   => 25,
+            'endLine'     => 28,
             'wasAbstract' => false,
 
             'declaringClass' => [
                 'name'      => '\A\ParentClass',
                 'filename'  => $this->getPathFor($fileName),
-                'startLine' => 13,
-                'endLine'   => 26,
+                'startLine' => 21,
+                'endLine'   => 39,
                 'type'      => 'class'
             ],
 
             'declaringStructure' => [
                 'name'            => '\A\ParentClass',
                 'filename'        => $this->getPathFor($fileName),
-                'startLine'       => 13,
-                'endLine'         => 26,
+                'startLine'       => 21,
+                'endLine'         => 39,
                 'type'            => 'class',
-                'startLineMember' => 17,
-                'endLineMember'   => 20
+                'startLineMember' => 25,
+                'endLineMember'   => 28
             ]
         ], $output['methods']['__construct']['override']);
 
-        $this->assertEquals(42, $output['methods']['__construct']['startLine']);
-        $this->assertEquals(45, $output['methods']['__construct']['endLine']);
+        $this->assertEquals(55, $output['methods']['__construct']['startLine']);
+        $this->assertEquals(58, $output['methods']['__construct']['endLine']);
 
         $this->assertEquals([
             [
@@ -643,31 +643,31 @@ class ClassInfoCommandTest extends IndexedTest
         ], $output['methods']['parentTraitMethod']['parameters']);
 
         $this->assertEquals([
-            'startLine'   => 7,
-            'endLine'     => 10,
+            'startLine'   => 15,
+            'endLine'     => 18,
             'wasAbstract' => false,
 
             'declaringClass' => [
                 'name'      => '\A\ParentClass',
                 'filename'  => $this->getPathFor($fileName),
-                'startLine' => 13,
-                'endLine'   => 26,
+                'startLine' => 21,
+                'endLine'   => 39,
                 'type'      => 'class'
             ],
 
             'declaringStructure' => [
                 'name'            => '\A\ParentTrait',
                 'filename'        => $this->getPathFor($fileName),
-                'startLine'       => 5,
-                'endLine'         => 11,
+                'startLine'       => 13,
+                'endLine'         => 19,
                 'type'            => 'trait',
-                'startLineMember' => 7,
-                'endLineMember'   => 10
+                'startLineMember' => 15,
+                'endLineMember'   => 18
             ]
         ], $output['methods']['parentTraitMethod']['override']);
 
-        $this->assertEquals(47, $output['methods']['parentTraitMethod']['startLine']);
-        $this->assertEquals(50, $output['methods']['parentTraitMethod']['endLine']);
+        $this->assertEquals(65, $output['methods']['parentTraitMethod']['startLine']);
+        $this->assertEquals(68, $output['methods']['parentTraitMethod']['endLine']);
 
         $this->assertEquals([
             [
@@ -697,31 +697,58 @@ class ClassInfoCommandTest extends IndexedTest
         ], $output['methods']['parentMethod']['parameters']);
 
         $this->assertEquals([
-            'startLine'   => 22,
-            'endLine'     => 25,
+            'startLine'   => 30,
+            'endLine'     => 33,
             'wasAbstract' => false,
 
             'declaringClass' => [
                 'name'      => '\A\ParentClass',
                 'filename'  => $this->getPathFor($fileName),
-                'startLine' => 13,
-                'endLine'   => 26,
+                'startLine' => 21,
+                'endLine'   => 39,
                 'type'      => 'class'
             ],
 
             'declaringStructure' => [
                 'name'            => '\A\ParentClass',
                 'filename'        => $this->getPathFor($fileName),
-                'startLine'       => 13,
-                'endLine'         => 26,
+                'startLine'       => 21,
+                'endLine'         => 39,
                 'type'            => 'class',
-                'startLineMember' => 22,
-                'endLineMember'   => 25
+                'startLineMember' => 30,
+                'endLineMember'   => 33
             ]
         ], $output['methods']['parentMethod']['override']);
 
-        $this->assertEquals(52, $output['methods']['parentMethod']['startLine']);
-        $this->assertEquals(55, $output['methods']['parentMethod']['endLine']);
+        $this->assertEquals(70, $output['methods']['parentMethod']['startLine']);
+        $this->assertEquals(73, $output['methods']['parentMethod']['endLine']);
+
+        $this->assertEquals([
+            'startLine'   => 35,
+            'endLine'     => 38,
+            'wasAbstract' => false,
+
+            'declaringClass' => [
+                'name'      => '\A\ParentClass',
+                'filename'  => $this->getPathFor($fileName),
+                'startLine' => 21,
+                'endLine'   => 39,
+                'type'      => 'class'
+            ],
+
+            'declaringStructure' => [
+                'name'            => '\A\ParentClass',
+                'filename'        => $this->getPathFor($fileName),
+                'startLine'       => 21,
+                'endLine'         => 39,
+                'type'            => 'class',
+                'startLineMember' => 35,
+                'endLineMember'   => 38
+            ]
+        ], $output['methods']['ancestorMethod']['override']);
+
+        $this->assertEquals(60, $output['methods']['ancestorMethod']['startLine']);
+        $this->assertEquals(63, $output['methods']['ancestorMethod']['endLine']);
 
         $this->assertEquals([
             [
@@ -751,31 +778,31 @@ class ClassInfoCommandTest extends IndexedTest
         ], $output['methods']['traitMethod']['parameters']);
 
         $this->assertEquals([
-            'startLine'   => 30,
-            'endLine'     => 33,
+            'startLine'   => 43,
+            'endLine'     => 46,
             'wasAbstract' => false,
 
             'declaringClass' => [
                 'name'      => '\A\ChildClass',
                 'filename'  =>  $this->getPathFor($fileName),
-                'startLine' => 38,
-                'endLine'   => 66,
+                'startLine' => 51,
+                'endLine'   => 84,
                 'type'      => 'class'
             ],
 
             'declaringStructure' => [
                 'name'            => '\A\TestTrait',
                 'filename'        => $this->getPathFor($fileName),
-                'startLine'       => 28,
-                'endLine'         => 36,
+                'startLine'       => 41,
+                'endLine'         => 49,
                 'type'            => 'trait',
-                'startLineMember' => 30,
-                'endLineMember'   => 33
+                'startLineMember' => 43,
+                'endLineMember'   => 46
             ]
         ], $output['methods']['traitMethod']['override']);
 
-        $this->assertEquals(57, $output['methods']['traitMethod']['startLine']);
-        $this->assertEquals(60, $output['methods']['traitMethod']['endLine']);
+        $this->assertEquals(75, $output['methods']['traitMethod']['startLine']);
+        $this->assertEquals(78, $output['methods']['traitMethod']['endLine']);
 
         $this->assertEquals([
             [
