@@ -44,9 +44,6 @@ class IndexDatabase implements StorageInterface, ClasslikeInfoBuilderProviderInt
     {
         $this->databasePath = $databasePath;
         $this->databaseVersion = $databaseVersion;
-
-        // Force establishing the connection and creation of tables.
-        $this->getConnection();
     }
 
     /**
