@@ -1044,6 +1044,23 @@ SOURCE;
         $this->assertEquals(1, $result['argumentIndex']);
     }
 
+    public function testGetInvocationInfoAtWithSqlStringArgumentsContainingParantheses()
+    {
+        $partialParser = new PartialParser();
+
+        $source = <<<'SOURCE'
+        <?php
+
+        foo('IF(
+SOURCE;
+
+        $result = $partialParser->getInvocationInfoAt($source);
+
+        $this->assertEquals(['foo'], $result['callStack']);
+        $this->assertEquals('function', $result['type']);
+        $this->assertEquals(0, $result['argumentIndex']);
+    }
+
     public function testGetInvocationInfoAtWithConstructorCallsWithNormalClassName()
     {
         $partialParser = new PartialParser();

@@ -276,7 +276,7 @@ class PartialParser
                 ];
             }
 
-            if (in_array($token['type'], [T_COMMENT, T_STRING, T_CONSTANT_ENCAPSED_STRING])) {
+            if (in_array($token['type'], [T_COMMENT, T_STRING, T_CONSTANT_ENCAPSED_STRING, T_ENCAPSED_AND_WHITESPACE])) {
                 continue;
             } elseif ($code[$i] === '}') {
                 ++$scopesClosed;
