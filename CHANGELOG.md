@@ -11,6 +11,7 @@
 * Semantic linting was incorrectly processing unqualified global constant names.
 * The status bar was not showing progress when a project index happened through a repository status change.
 * Editing a file that did not meet the allowed extensions specified in the project settings still caused it to be added to the index.
+* Parantheses inside strings were sometimes interfering with invocation info information, causing the wrong information to be returned.
 * Previously a fix was applied to make FQCN's actually contain a leading slash to clearly indicate that they were fully qualified. This still didn't happen everywhere, which has been corrected now.
 * Built-in interfaces no longer have `isAbstract` set to true. They _are_ abstract in a certain sense, but this property is meant to indicate if a classlike has been defined using the abstract keyword. It was also not consistent with the behavior for non-built-in interfaces.
 * For method implementations, `implementation.declaringClass` previously pointed to the interface. This has now been changed to point to the class originally implementing the interface, which is consistent with `override.declaringClass`. Note that `implementation.declaringStructure` will still point to the interface.
