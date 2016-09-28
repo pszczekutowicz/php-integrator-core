@@ -588,6 +588,21 @@ class IndexDatabase implements StorageInterface, ClasslikeInfoBuilderProviderInt
     }
 
     /**
+     * @inheritDoc
+     */
+    public function getNamespaces()
+    {
+        return $this->getConnection()->createQueryBuilder()
+            ->select('fns.namespace')
+            ->from(IndexStorageItemEnum::FILES_NAMESPACES, 'fns')
+            ->where('fns.namespace IS NOT NULL')
+            ->groupBy('fns.namespace')
+            ->orderBy('fns.namespace')
+            ->execute()
+            ->fetchAll();
+    }
+
+    /**
      * Starts a transaction.
      */
     public function beginTransaction()

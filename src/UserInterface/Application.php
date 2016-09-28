@@ -116,7 +116,8 @@ class Application
             '--semantic-lint'       => 'semanticLintCommand',
             '--available-variables' => 'availableVariablesCommand',
             '--deduce-types'        => 'deduceTypesCommand',
-            '--invocation-info'     => 'invocationInfoCommand'
+            '--invocation-info'     => 'invocationInfoCommand',
+            '--namespace-list'      => 'namespaceListCommand'
         ];
 
         $optionCollection = new OptionCollection();
@@ -460,6 +461,10 @@ class Application
         $container
             ->register('invocationInfoCommand', Command\InvocationInfoCommand::class)
             ->setArguments([new Reference('partialParser'), new Reference('sourceCodeStreamReader')]);
+
+        $container
+            ->register('namespaceListCommand', Command\NamespaceListCommand::class)
+            ->setArguments([new Reference('indexDatabase')]);
 
         return $container;
     }

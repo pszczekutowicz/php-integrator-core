@@ -28,4 +28,11 @@ interface NamespaceImportProviderInterface
      * }
      */
     public function getUseStatementsForFile($filePath);
+
+    /**
+     * @return array {
+     *     @var string $name
+     * }
+     */
+    public function getNamespaces();
 }
